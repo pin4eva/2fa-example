@@ -45,19 +45,28 @@ const LoginPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSubmitSuccessful]);
 
-  const loginUser = async (data: LoginInput) => {
+  const loginUser = async (input: LoginInput) => {
     try {
       store.setRequestLoading(true);
-      const {
-        data: { user },
-      } = await authApi.post<ILoginResponse>("/auth/login", data);
+      const { data } = await authApi.post<ILoginResponse>("/auth/login", input);
       store.setRequestLoading(false);
-      store.setAuthUser(user);
-      if (user.otp_enabled) {
+      store.setLoginResponse(data);
+      if (data?.token) {
+        localStorage.setItem("__token", data.token);
+      }
+      if (data?.isOtpEnabled) {
         navigate("/login/validateOtp");
       } else {
-        navigate("/profile");
+        localStorage.setItem("profiles", JSON.stringify(data.profiles));
+        store.setProfiles(data.profiles);
+        navigate("/login/prescreen");
+        // navigate("/profile");
       }
+      // store.setAuthUser(user);
+      // if (user.otp_enabled) {
+      // } else {
+      //   navigate("/profile");
+      // }
     } catch (error: any) {
       store.setRequestLoading(false);
       const resMessage =

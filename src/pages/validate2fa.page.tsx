@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
 import useStore from "../store";
 import { authApi } from "../api/authApi";
+import axios from "axios";
 
 const styles = {
   inputField: `form-control block w-full px-4 py-4 text-sm text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none`,
@@ -34,15 +35,18 @@ const Validate2faPage = () => {
   const validate2fa = async (token: string) => {
     try {
       store.setRequestLoading(true);
-      const {
-        data: { otp_valid },
-      } = await authApi.post<{ otp_valid: boolean }>("/auth/otp/validate", {
-        token,
-        user_id: store.authUser?.id,
-      });
+      const { data } = await axios.post<{ otpValid: boolean; token: string }>(
+        "/auth/validate-otp",
+        {
+          token,
+          authId: store.loginResponse?.id,
+          email: store.loginResponse?.email,
+        }
+      );
       store.setRequestLoading(false);
-      if (otp_valid) {
-        navigate("/profile");
+      if (data.otpValid) {
+        localStorage.setItem("__token", data.token);
+        navigate("/login/prescreen");
       } else {
         navigate("/login");
       }
@@ -70,7 +74,7 @@ const Validate2faPage = () => {
   }, [setFocus]);
 
   useEffect(() => {
-    if (!store.authUser) {
+    if (!store.loginResponse) {
       navigate("/login");
     }
   }, []);

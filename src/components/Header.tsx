@@ -7,7 +7,8 @@ const Header = () => {
   const user = store.authUser;
 
   const handleLogout = () => {
-    window.location.reload();
+    localStorage.clear();
+    window.location.href = "/login";
   };
 
   return (
@@ -16,7 +17,7 @@ const Header = () => {
         <nav className="h-full flex justify-between container items-center">
           <div>
             <Link to="/" className="text-ct-dark-600 text-2xl font-semibold">
-              CodevoWeb
+              TSIN
             </Link>
           </div>
           <ul className="flex items-center gap-4">

@@ -5,6 +5,11 @@ import { authApi } from "../api/authApi";
 import { IUser } from "../api/types";
 import TwoFactorAuth from "../components/TwoFactorAuth";
 import useStore from "../store";
+import {
+  GenerateOtpInput,
+  GenerateOtpResponse,
+} from "../interfaces/auth.interface";
+import axios from "axios";
 
 const ProfilePage = () => {
   const [secret, setSecret] = useState({
@@ -16,30 +21,20 @@ const ProfilePage = () => {
   const store = useStore();
   const user = store.authUser;
 
-  const generateQrCode = async ({
-    user_id,
-    email,
-  }: {
-    user_id: string;
-    email: string;
-  }) => {
+  const generateQrCode = async ({ authId, email }: GenerateOtpInput) => {
     try {
       store.setRequestLoading(true);
-      const response = await authApi.post<{
-        otpauth_url: string;
-        base32: string;
-      }>("/auth/otp/generate", { user_id, email });
+      const { data } = await axios.post<GenerateOtpResponse>(
+        "/auth/generate-otp",
+        { authId, email }
+      );
       store.setRequestLoading(false);
 
-      if (response.status === 200) {
+      if (data?.otpAuthUrl) {
         setOpenModal(true);
-        console.log({
-          base32: response.data.base32,
-          otpauth_url: response.data.otpauth_url,
-        });
         setSecret({
-          base32: response.data.base32,
-          otpauth_url: response.data.otpauth_url,
+          base32: data.secret,
+          otpauth_url: data.otpAuthUrl,
         });
       }
     } catch (error: any) {
@@ -57,17 +52,20 @@ const ProfilePage = () => {
     }
   };
 
-  const disableTwoFactorAuth = async (user_id: string) => {
+  const disableTwoFactorAuth = async (authId: string) => {
+    if (!store?.authUser) return;
     try {
       store.setRequestLoading(true);
-      const {
-        data: { user },
-      } = await authApi.post<{
-        otp_disabled: boolean;
-        user: IUser;
-      }>("/auth/otp/disable", { user_id });
+      const { data } = await axios.post<{
+        isOtpEnabled: boolean;
+      }>("/auth/disable-otp", { authId, email: store.authUser.email });
       store.setRequestLoading(false);
-      store.setAuthUser(user);
+      if (store?.authUser) {
+        store.setAuthUser({
+          ...store.authUser,
+          isOtpEnabled: data.isOtpEnabled || false,
+        });
+      }
       toast.warning("Two Factor Authentication Disabled", {
         position: "top-right",
       });
@@ -85,12 +83,11 @@ const ProfilePage = () => {
     }
   };
 
-  useEffect(() => {
-    console.log(store.authUser);
-    if (!store.authUser) {
-      navigate("/login");
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (!store.authUser) {
+  //     navigate("/login");
+  //   }
+  // }, []);
 
   return (
     <>
@@ -100,7 +97,7 @@ const ProfilePage = () => {
             <h1 className="text-2xl font-semibold">Profile Page</h1>
             <div className="mt-8">
               <p className="mb-4">ID: {user?.id}</p>
-              <p className="mb-4">Name: {user?.name}</p>
+              <p className="mb-4">Name: {user?.firstName}</p>
               <p className="mb-4">Email: {user?.email}</p>
             </div>
           </div>
@@ -111,7 +108,7 @@ const ProfilePage = () => {
             <p className="mb-4">
               Secure your account with TOTP two-factor authentication.
             </p>
-            {store.authUser?.otp_enabled ? (
+            {store.authUser?.isOtpEnabled ? (
               <button
                 type="button"
                 className="focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2"
@@ -124,7 +121,7 @@ const ProfilePage = () => {
                 type="button"
                 className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none"
                 onClick={() =>
-                  generateQrCode({ user_id: user?.id!, email: user?.email! })
+                  generateQrCode({ authId: user?.authId!, email: user?.email! })
                 }
               >
                 Setup 2FA
@@ -133,11 +130,12 @@ const ProfilePage = () => {
           </div>
         </div>
       </section>
-      {openModal && (
+      {openModal && store?.authUser && (
         <TwoFactorAuth
           base32={secret.base32}
           otpauth_url={secret.otpauth_url}
-          user_id={store.authUser?.id!}
+          authId={store.authUser?.authId!}
+          email={store.authUser.email}
           closeModal={() => setOpenModal(false)}
         />
       )}

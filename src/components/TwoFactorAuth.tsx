@@ -6,7 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { authApi } from "../api/authApi";
 import { toast } from "react-toastify";
 import useStore from "../store";
-import { IUser } from "../api/types";
+import { ILoginResponse, IUser } from "../api/types";
+import { VerifyOTPResponse } from "../interfaces/auth.interface";
 
 const styles = {
   heading3: `text-xl font-semibold text-gray-900 p-4 border-b`,
@@ -22,7 +23,8 @@ const styles = {
 type TwoFactorAuthProps = {
   otpauth_url: string;
   base32: string;
-  user_id: string;
+  authId: string;
+  email: string;
   closeModal: () => void;
 };
 
@@ -35,7 +37,8 @@ type TwoFactorAuthInput = TypeOf<typeof twoFactorAuthSchema>;
 const TwoFactorAuth: FC<TwoFactorAuthProps> = ({
   otpauth_url,
   base32,
-  user_id,
+  authId,
+  email,
   closeModal,
 }) => {
   const [qrcodeUrl, setqrCodeUrl] = useState("");
@@ -53,17 +56,22 @@ const TwoFactorAuth: FC<TwoFactorAuthProps> = ({
   const verifyOtp = async (token: string) => {
     try {
       store.setRequestLoading(true);
-      const {
-        data: { user },
-      } = await authApi.post<{ otp_verified: string; user: IUser }>(
-        "/auth/otp/verify",
-        {
-          token,
-          user_id,
-        }
-      );
+      const { data } = await authApi.post<ILoginResponse>("/auth/verify-otp", {
+        token,
+        authId,
+        email,
+      });
+
       store.setRequestLoading(false);
-      store.setAuthUser(user);
+
+      const localUserString = localStorage.getItem("__user");
+      if (localUserString) {
+        const newUserData = JSON.parse(localUserString) as IUser;
+        newUserData.isOtpEnabled = data.isOtpEnabled;
+        store.setAuthUser(newUserData);
+        localStorage.setItem("profiles", JSON.stringify(newUserData));
+      }
+      // store.setAuthUser(user);
       closeModal();
       toast.success("Two-Factor Auth Enabled Successfully", {
         position: "top-right",

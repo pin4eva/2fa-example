@@ -5,6 +5,7 @@ import LoginPage from "../pages/login.page";
 import ProfilePage from "../pages/profile.page";
 import RegisterPage from "../pages/register.page";
 import Validate2faPage from "../pages/validate2fa.page";
+import Prescreen from "../pages/prescreen.page";
 
 const authRoutes: RouteObject = {
   path: "*",
@@ -19,6 +20,10 @@ const authRoutes: RouteObject = {
         {
           path: "validateOtp",
           element: <Validate2faPage />,
+        },
+        {
+          path: "prescreen",
+          element: <Prescreen />,
         },
       ],
     },
@@ -37,6 +42,7 @@ const normalRoutes: RouteObject = {
       index: true,
       element: <HomePage />,
     },
+
     {
       path: "profile",
       element: <ProfilePage />,
