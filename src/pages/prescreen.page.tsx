@@ -43,7 +43,8 @@ const Prescreen: React.FC = () => {
     }
   };
   return (
-    <div className="profiles container mx-auto">
+    <div className="profiles max-w-md mx-auto">
+      <h1 className="text-3xl">Choose account</h1>
       <ul>
         {store?.loginResponse?.profiles.map((profile) => (
           <li key={profile.id}>
