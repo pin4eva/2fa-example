@@ -7,7 +7,7 @@ import App from "./App";
 import { BrowserRouter } from "react-router-dom";
 import axios from "axios";
 
-const BASE_URL = import.meta.env.API_URL || "http://localhost:8001/api/";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 axios.create({
   baseURL: BASE_URL,

@@ -9,6 +9,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import useStore from "../store";
 import { authApi } from "../api/authApi";
 import { ILoginResponse } from "../api/types";
+import axios from "axios";
 
 const loginSchema = object({
   email: string()
@@ -48,7 +49,7 @@ const LoginPage = () => {
   const loginUser = async (input: LoginInput) => {
     try {
       store.setRequestLoading(true);
-      const { data } = await authApi.post<ILoginResponse>("/auth/login", input);
+      const { data } = await axios.post<ILoginResponse>("/auth/login", input);
       store.setRequestLoading(false);
       store.setLoginResponse(data);
       if (data?.token) {
