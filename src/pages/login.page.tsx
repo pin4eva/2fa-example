@@ -58,6 +58,10 @@ const LoginPage = () => {
       if (data?.isOtpEnabled) {
         navigate("/login/validateOtp");
       } else {
+        if (data?.isStaff) {
+          store.setAuthUser(data?.user);
+          return navigate("/profile");
+        }
         localStorage.setItem("profiles", JSON.stringify(data.profiles));
         store.setProfiles(data.profiles);
         navigate("/login/prescreen");

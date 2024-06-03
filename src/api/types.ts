@@ -78,4 +78,6 @@ export interface ILoginResponse {
   email: string;
   isOtpEnabled: boolean;
   profiles: Profile[];
+  isStaff: boolean;
+  user: IUser;
 }

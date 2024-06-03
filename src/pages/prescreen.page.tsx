@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { IUser, Profile } from "../api/types";
+import { ILoginResponse, IUser, Profile } from "../api/types";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import useStore from "../store";
@@ -18,14 +18,21 @@ const Prescreen: React.FC = () => {
   //   }
   // }, []);
 
-  const handleProfileSelection = async (profile: Profile) => {
+  const handleProfileSelection = async (profile: Profile, authId: string) => {
     try {
       setLoading(true);
-      const { data } = await axios.get<IUser>("/user/single/" + profile.id);
+      const { data } = await axios.post<ILoginResponse>(
+        "/auth/authenticate-profiile",
+        {
+          authId,
+          userId: profile.id,
+        }
+      );
       const payload: IUser = {
-        ...data,
+        ...data.user,
         isOtpEnabled: store?.loginResponse?.isOtpEnabled || false,
       };
+      localStorage.setItem("__token", data?.token);
       store.setAuthUser(payload);
       localStorage.setItem("__user", JSON.stringify(payload));
       navigate("/profile");
@@ -50,7 +57,12 @@ const Prescreen: React.FC = () => {
           <li key={profile.id}>
             <button
               className="btn"
-              onClick={() => handleProfileSelection(profile)}
+              onClick={() =>
+                handleProfileSelection(
+                  profile,
+                  store.loginResponse?.id as string
+                )
+              }
             >
               {profile.name}
 
